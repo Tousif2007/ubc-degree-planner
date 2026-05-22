@@ -24,5 +24,16 @@ def calculate_stats(transcript):
     average = total_weighted_grades / total_credits
     return total_credits, average
 
-credits, avg = calculate_stats(my_transcript)
-print(f"Total Credits: {credits} | Cumulative Average: {avg:.2f}%")
+
+# Master Database of UBC Science Specialization Requirements & Quotas
+majors_database = {
+    "Data Science": {
+        "cutoffs": {2025: 76.0},  # New specialization entry option as of 2025
+        "first_year_reqs": ["MATH 100", "DSCI 100", "CPSC 103"]
+    },
+    "Biochemistry": {
+        "cutoffs": {2025: 76.7, 2024: 65.9, 2023: 76.4, 2022: 71.0, 2021: 71.4},
+        "first_year_reqs": ["BIOL 112", "CHEM 121", "CHEM 123", "MATH 100"]
+    }
+}
+
