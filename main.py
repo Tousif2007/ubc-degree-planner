@@ -49,7 +49,26 @@ majors_database = {
             "Upper Year Core": ["BIOC 301", "BIOC 302", "BIOC 303", "BIOC 402", "BIOC 403", "BIOL 335"]
         }
     },
+    "Physics": {
+        "cutoffs": None,
+        "first_year_reqs": [
+            "SCIE 113",
+            ["CHEM 121", "CHEM 111"],
+            ["MATH 100", "MATH 102", "MATH 104", "MATH 180"],
+            ["MATH 101", "MATH 103", "MATH 105"],
+            ["PHYS 117", "PHYS 106", "PHYS 107"],
+            ["PHYS 118", "PHYS 108"],
+            "PHYS 119"
+        ],
+        "grad_requirements": {
+            "Second Year Core": ["MATH 200", ["MATH 215", "MATH 221"], ["PHYS 200", "PHYS 216"], ["PHYS 219", "PHYS 229"], "PHYS 210"],
+            "Upper Year Core": ["MATH 317", "PHYS 203", ["PHYS 309", "PHYS 319"], ["PHYS 312", "MATH 316"], "PHYS 304"]
+        }
+    }
 }
+
+
+
 
 def check_requirement(req, transcript):
     """
@@ -89,3 +108,4 @@ def audit_major(major_name, transcript):
 
 audit_major("Biochemistry", my_transcript)
 audit_major("Data Science", my_transcript) 
+audit_major("Physics", my_transcript)
