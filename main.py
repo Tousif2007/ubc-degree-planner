@@ -51,3 +51,41 @@ majors_database = {
     },
 }
 
+def check_requirement(req, transcript):
+    """
+    Determines if a course requirement is satisfied.
+    Handles 'OR' logic by checking if any item in a sub-list exists in the transcript.
+    """
+    if isinstance(req, list):
+        # Using 'any()' to see if the student has at least one course from the 'OR' list
+        return any(course in transcript for course in req)
+    else:
+        # Standard check for a single required course
+        return req in transcript
+    
+    
+def audit_major(major_name, transcript):
+    """
+    Performs a check against the majors_database to find missing courses.
+    Provides a status report per requirement.
+    """
+    if major_name not in majors_database:
+        print(f"Error: {major_name} not found in database.")
+        return
+    
+    major_data = majors_database[major_name]
+    print(f"\n--- Progress Review: {major_name} ---")
+    
+    # Iterate through first-year requirements and validate against transcript
+    for req in major_data["first_year_reqs"]:
+        
+        # Check if the requirement is satisfied
+        if check_requirement(req, transcript):
+            status = "Met"
+        else:
+            status = "MISSING"
+            
+        print(f"Requirement {req}: {status}")
+
+audit_major("Biochemistry", my_transcript)
+audit_major("Data Science", my_transcript) 
