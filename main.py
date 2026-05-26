@@ -64,23 +64,52 @@ majors_database = {
             "Second Year Core": ["MATH 200", ["MATH 215", "MATH 221"], ["PHYS 200", "PHYS 216"], ["PHYS 219", "PHYS 229"], "PHYS 210"],
             "Upper Year Core": ["MATH 317", "PHYS 203", ["PHYS 309", "PHYS 319"], ["PHYS 312", "MATH 316"], "PHYS 304"]
         }
+    },
+    "Mathematics": {
+        "cutoffs": {2025: None, 2024: 67.0, 2023: 76.3, 2022: 69.1, 2021: 65.1},
+        "first_year_reqs": [
+            "SCIE 113",
+            ["MATH 100", "MATH 102", "MATH 104", "MATH 120", "MATH 180", "MATH 184"],
+            ["MATH 101", "MATH 103", "MATH 105", "MATH 121"],
+            "PHYS 100-level",
+            ["CPSC 110", "CPSC 103"]
+        ],
+        "grad_requirements": {
+            "Second Year Core": ["MATH 200", "MATH 220", ["MATH 221", "MATH 223", "MATH 215"], ["CPSC 210", "MATH 210"]],
+            "Upper Year Core": ["MATH 300-level", "MATH/STAT/CPSC 300-level"]
+        }
     }
 }
+    
 
 
 
+
+
+import re # This allows us to use pattern matching for "PHYS 100-level"
 
 def check_requirement(req, transcript):
     """
     Determines if a course requirement is satisfied.
-    Handles 'OR' logic by checking if any item in a sub-list exists in the transcript.
+    - Handles 'OR' logic for lists.
+    - Handles 'Category' logic (e.g., 'PHYS 100-level').
+    - Handles standard single course requirements.
     """
+    
+    # CASE 1: 'OR' logic
     if isinstance(req, list):
-        # Using 'any()' to see if the student has at least one course from the 'OR' list
-        return any(course in transcript for course in req)
-    else:
-        # Standard check for a single required course
-        return req in transcript
+        return any(check_requirement(r, transcript) for r in req)
+    
+    # CASE 2: Special 'Category' logic (e.g., 'PHYS 100-level')
+    if "-level" in req:
+        # Splits 'PHYS 100-level' into "PHYS" and "1"
+        subject, level_info = req.replace("-level", "").split(" ")
+        pattern = rf"^{subject} {level_info[0]}"
+        # Checks if any course in your transcript matches the pattern
+        return any(re.match(pattern, course) for course in transcript)
+        
+    # CASE 3: Standard single course check
+    return req in transcript
     
     
 def audit_major(major_name, transcript):
@@ -109,3 +138,4 @@ def audit_major(major_name, transcript):
 audit_major("Biochemistry", my_transcript)
 audit_major("Data Science", my_transcript) 
 audit_major("Physics", my_transcript)
+audit_major("Mathematics", my_transcript)
