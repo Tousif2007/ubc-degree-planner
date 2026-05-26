@@ -129,11 +129,11 @@ def audit_major(major_name, transcript):
         
         # Check if the requirement is satisfied
         if check_requirement(req, transcript):
-            status = "Met"
+          print(f"Requirement {req}: [✓] Completed")
         else:
-            status = "MISSING"
-            
-        print(f"Requirement {req}: {status}")
+            # If it's a list, we show the user their options
+            options = f" (Need to take one of: {req})" if isinstance(req, list) else ""
+            print(f"Requirement {req}: [MISSING]{options}")
 
 audit_major("Biochemistry", my_transcript)
 audit_major("Data Science", my_transcript) 
