@@ -1,17 +1,29 @@
 # UBC Degree Planner - Core Engine
 
-my_transcript = {
-    "CPSC 103": [3.0, 71],
-    "MATH 100": [3.0, 71],
-    "PHYS 131": [3.0, 77],
-    "SCIE 113": [3.0, 82],
-    "DSCI 100": [3.0, 62],
-    "CPSC 107": [3.0, 76],
-    "MATH 101": [3.0, 69],
-    "ENGL 110":  [3.0, 80],
-    "BIO 111":  [3.0, 92],
-    "PHYS 119": [1.0, 83]
-}
+def load_transcript(filename):
+    """
+    Reads a text file and converts it into a transcript dictionary.
+    Expects comma-separated lines: 'Course Code, Credits, Grade'
+    """
+    new_transcript = {}
+    try:
+        with open(filename, 'r') as file:
+            for line in file:
+                # Skip empty lines or spaces
+                if not line.strip():
+                    continue
+                # Split line by comma and strip extra padding whitespace
+                parts = [p.strip() for p in line.split(',')]
+                if len(parts) == 3:
+                    course_code, credits, grade = parts
+                    new_transcript[course_code] = [float(credits), float(grade)]
+        return new_transcript
+    except FileNotFoundError:
+        print(f"Error: The file '{filename}' was not found.")
+        return {}
+
+# Dynamically pull your data from the text file instead of hardcoding it
+my_transcript = load_transcript('transcript.txt')
 
 def calculate_stats(transcript):
     total_credits = 0.0
@@ -109,7 +121,7 @@ def check_requirement(req, transcript):
         for course in transcript:
             parts = course.split(" ")
             # Ensure it is a valid course format (e.g., "MATH 302")
-            if len(parts) == 2 and parts[0] == subject:
+            if len(parts) == 2 and parts[0] in subject.split("/"):
                 # Compare the course number numerically
                 if int(parts[1]) >= threshold:
                     return True
@@ -138,6 +150,10 @@ def audit_major(major_name, transcript, mode='first'):
         title = f"Full Degree Progress: {major_name}"
     
     print(f"\n--- {title} ---")
+
+    total_credits, gpa_average = calculate_stats(transcript)
+    print(f"Credits Completed: {total_credits:.1f}  |  Current Cumulative Average: {gpa_average:.1f}%")
+    print("-" * (len(title) + 8))
     
     met_reqs = 0
     for req in reqs_to_check:
