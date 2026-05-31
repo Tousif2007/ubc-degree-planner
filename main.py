@@ -112,30 +112,42 @@ def check_requirement(req, transcript):
     return req in transcript
     
     
-def audit_major(major_name, transcript):
-    """
-    Performs a check against the majors_database to find missing courses.
-    Provides a status report per requirement.
-    """
+def audit_major(major_name, transcript, mode='first'):
     if major_name not in majors_database:
-        print(f"Error: {major_name} not found in database.")
+        print(f"I couldn't find {major_name} in our records.")
         return
     
     major_data = majors_database[major_name]
-    print(f"\n--- Progress Review: {major_name} ---")
     
-    # Iterate through first-year requirements and validate against transcript
-    for req in major_data["first_year_reqs"]:
-        
-        # Check if the requirement is satisfied
+    # Decide which requirements to pull based on the mode
+    if mode == 'first':
+        reqs_to_check = major_data["first_year_reqs"]
+        title = f"First Year Progress: {major_name}"
+    else:
+        # Flatten all requirements into one list for the full audit
+        reqs_to_check = (major_data["first_year_reqs"] + 
+                         major_data["grad_requirements"]["Second Year Core"] + 
+                         major_data["grad_requirements"]["Upper Year Core"])
+        title = f"Full Degree Progress: {major_name}"
+    
+    print(f"\n--- {title} ---")
+    
+    met_reqs = 0
+    for req in reqs_to_check:
         if check_requirement(req, transcript):
-          print(f"Requirement {req}: [✓] Completed")
+            print(f"Requirement {req}: [✓] Completed")
+            met_reqs += 1
         else:
-            # If it's a list, we show the user their options
-            options = f" (Need to take one of: {req})" if isinstance(req, list) else ""
-            print(f"Requirement {req}: [MISSING]{options}")
+            options = f" (Needs one of: {req})" if isinstance(req, list) else ""
+            print(f"Requirement {req}: [ ] MISSING{options}")
+            
+    # Progress Bar
+    total = len(reqs_to_check)
+    percentage = (met_reqs / total) * 100
+    bar = '█' * int(10 * met_reqs // total) + '░' * (10 - int(10 * met_reqs // total))
+    
+    print(f"\nOverall Progress: |{bar}| {percentage:.0f}%")
 
-audit_major("Biochemistry", my_transcript)
-audit_major("Data Science", my_transcript) 
-audit_major("Physics", my_transcript)
-audit_major("Mathematics", my_transcript)
+audit_major("Mathematics", my_transcript, mode='first')
+
+audit_major("Mathematics", my_transcript, mode='full')
