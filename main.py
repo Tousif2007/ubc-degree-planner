@@ -86,13 +86,14 @@ majors_database = {
 
 
 
-import re # This allows us to use pattern matching for "PHYS 100-level"
+import re # Enables pattern matching to handle broad course requirements like 'PHYS 100-level'
 
 def check_requirement(req, transcript):
     """
     Determines if a course requirement is satisfied.
     - Handles 'OR' logic for lists.
-    - Handles 'Category' logic (e.g., 'PHYS 100-level').
+    - Handles 'X00-level' logic: Checks if any course in the subject 
+      is equal to or greater than the specified level.
     - Handles standard single course requirements.
     """
     
@@ -100,13 +101,19 @@ def check_requirement(req, transcript):
     if isinstance(req, list):
         return any(check_requirement(r, transcript) for r in req)
     
-    # CASE 2: Special 'Category' logic (e.g., 'PHYS 100-level')
+# CASE 2: Numerical level logic (e.g., '300-level')
     if "-level" in req:
-        # Splits 'PHYS 100-level' into "PHYS" and "1"
-        subject, level_info = req.replace("-level", "").split(" ")
-        pattern = rf"^{subject} {level_info[0]}"
-        # Checks if any course in your transcript matches the pattern
-        return any(re.match(pattern, course) for course in transcript)
+        subject, level_str = req.replace("-level", "").split(" ")
+        threshold = int(level_str)
+        
+        for course in transcript:
+            parts = course.split(" ")
+            # Ensure it is a valid course format (e.g., "MATH 302")
+            if len(parts) == 2 and parts[0] == subject:
+                # Compare the course number numerically
+                if int(parts[1]) >= threshold:
+                    return True
+        return False
         
     # CASE 3: Standard single course check
     return req in transcript
