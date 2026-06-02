@@ -1,4 +1,5 @@
 # UBC Degree Planner - Core Engine
+from pathlib import Path
 
 def load_transcript(filename):
     """
@@ -9,10 +10,10 @@ def load_transcript(filename):
     try:
         with open(filename, 'r') as file:
             for line in file:
-                # Skip empty lines or spaces
+                # Skipping empty lines or spaces
                 if not line.strip():
                     continue
-                # Split line by comma and strip extra padding whitespace
+                # Split line by comma and removing extra padding whitespace
                 parts = [p.strip() for p in line.split(',')]
                 if len(parts) == 3:
                     course_code, credits, grade = parts
@@ -21,11 +22,18 @@ def load_transcript(filename):
     except FileNotFoundError:
         print(f"Error: The file '{filename}' was not found.")
         return {}
+    
+# Find the exact folder where main.py is saved, then look inside it for transcript.txt
+transcript_path = Path(__file__).parent / "transcript.txt"
+my_transcript = load_transcript(transcript_path)
 
-# Dynamically pull your data from the text file instead of hardcoding it
-my_transcript = load_transcript('transcript.txt')
+
 
 def calculate_stats(transcript):
+    # If the transcript is empty, stop early and return zeros safely
+    if not transcript:
+        return 0.0, 0.0
+    
     total_credits = 0.0
     total_weighted_grades = 0.0 
     for course, data in transcript.items():
@@ -171,6 +179,79 @@ def audit_major(major_name, transcript, mode='first'):
     
     print(f"\nOverall Progress: |{bar}| {percentage:.0f}%")
 
-audit_major("Mathematics", my_transcript, mode='first')
+def interactive_menu():
+    while True:
+        print("\n=================================")
+        print("    UBC SCIENCE MAJOR PLANNER    ")
+        print("=================================")
+        print("1. Check my overall average & credits")
+        print("2. Check requirements for a specific major")
+        print("3. Compare all majors side-by-side")
+        print("4. Close the program")
+        print("---------------------------------")
+        
+        choice = input("Pick an option (1, 2, 3, or 4): ").strip()
+        
+        if choice == "1":
+            total_credits, gpa_average = calculate_stats(my_transcript)
+            print("\n" + "="*35)
+            print("           YOUR STATS            ")
+            print("="*35)
+            print(f" Total Credits Completed : {total_credits:.1f}")
+            print(f" Current Average         : {gpa_average:.1f}%")
+            print("="*35)
+            input("\nPress Enter to go back to the main menu...")
 
-audit_major("Mathematics", my_transcript, mode='full')
+        elif choice == "2":
+            print("\nWhich major do you want to check?")
+            majors_list = list(majors_database.keys())
+            for idx, major in enumerate(majors_list, 1):
+                print(f"  {idx}. {major}")
+            
+            major_idx = input(f"\nPick a number (1-{len(majors_list)}): ").strip()
+            
+            if major_idx.isdigit() and 1 <= int(major_idx) <= len(majors_list):
+                selected_major = majors_list[int(major_idx) - 1]
+                
+                print("\nWhat do you want to check for this major?")
+                print("  1. Just first year requirements (for moving to 2nd year)")
+                print("  2. Every requirement needed to graduate")
+                scope_choice = input("Pick 1 or 2: ").strip()
+                
+                mode = 'first' if scope_choice == "1" else 'full'
+                audit_major(selected_major, my_transcript, mode=mode)
+                input("\nPress Enter to go back to the main menu...")
+            else:
+                print("\n[!] Invalid choice. Going back to the main menu.")
+                
+        elif choice == "3":
+            print("\n" + "="*45)
+            print("        MAJOR PROGRESS COMPARISON        ")
+            print("="*45)
+            print("First Year Progress for each major:")
+            print("-" * 45)
+            
+            # Loop through every major in the database to compare them
+            for major_name, major_data in majors_database.items():
+                reqs_to_check = major_data["first_year_reqs"]
+                met_reqs = 0
+                for req in reqs_to_check:
+                    if check_requirement(req, my_transcript):
+                        met_reqs += 1
+                
+                total = len(reqs_to_check)
+                percentage = (met_reqs / total) * 100
+                bar = '█' * int(10 * met_reqs // total) + '░' * (10 - int(10 * met_reqs // total))
+                print(f" {major_name:<15} : |{bar}| {percentage:.0f}% finished")
+                
+            print("="*45)
+            input("\nPress Enter to go back to the main menu...")
+
+        elif choice == "4":
+            print("\nClosing the planner. Good luck with your major applications!")
+            break
+        else:
+            print("\n[!] That wasn't an option. Please type 1, 2, 3, or 4.")
+
+if __name__ == "__main__":
+    interactive_menu()
