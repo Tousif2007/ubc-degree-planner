@@ -162,7 +162,28 @@ def audit_major(major_name, transcript, mode='first'):
     total_credits, gpa_average = calculate_stats(transcript)
     print(f"Credits Completed: {total_credits:.1f}  |  Current Cumulative Average: {gpa_average:.1f}%")
     print("-" * (len(title) + 8))
-    
+
+   # --- LIVE COMPETITIVE CUTOFF CHECK ---
+    cutoffs = major_data.get("cutoffs")
+    if cutoffs:
+        # Filter out years that are None, and find the most recent year left
+        valid_years = [year for year, gpa in cutoffs.items() if gpa is not None]
+        
+        if valid_years:
+            latest_year = max(valid_years)
+            cutoff_gpa = cutoffs[latest_year]
+            diff = gpa_average - cutoff_gpa
+            
+            print(f"Historical Cutoff ({latest_year}): {cutoff_gpa:.1f}%")
+            if diff >= 0:
+                print(f"Admission Status       : Competitive! 🎉 (+{diff:.1f}% above cutoff)")
+            else:
+                print(f"Admission Status       : Catching Up 🚀 ({abs(diff):.1f}% below cutoff)")
+        else:
+            print("Historical Cutoff      : No competitive cutoff cap (Minimum requirements apply).")
+    else:
+        print("Historical Cutoff      : No competitive cutoff data available.") 
+
     met_reqs = 0
     for req in reqs_to_check:
         if check_requirement(req, transcript):
@@ -248,7 +269,7 @@ def interactive_menu():
             input("\nPress Enter to go back to the main menu...")
 
         elif choice == "4":
-            print("\nClosing the planner. Good luck with your major applications!")
+            print("\nClosing the planner. Good luck with your UBC School Year!")
             break
         else:
             print("\n[!] That wasn't an option. Please type 1, 2, 3, or 4.")
