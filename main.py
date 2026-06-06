@@ -200,6 +200,87 @@ def audit_major(major_name, transcript, mode='first'):
     
     print(f"\nOverall Progress: |{bar}| {percentage:.0f}%")
 
+def run_target_calculator(transcript):
+    print("\n" + "="*45)
+    print("         COMPETITIVE GRADE TARGETER          ")
+    print("="*45)
+    
+    total_credits, gpa_average = calculate_stats(transcript)
+    if total_credits == 0:
+        print("[!] Your transcript is currently empty. Cannot calculate target paths.")
+        return
+
+    print("Which major are you targeting?")
+    majors_list = list(majors_database.keys())
+    for idx, major in enumerate(majors_list, 1):
+        print(f"  {idx}. {major}")
+    
+    major_idx = input(f"\nPick a number (1-{len(majors_list)}): ").strip()
+    if not (major_idx.isdigit() and 1 <= int(major_idx) <= len(majors_list)):
+        print("[!] Invalid selection. Returning to menu.")
+        return
+        
+    selected_major = majors_list[int(major_idx) - 1]
+    major_data = majors_database[selected_major]
+    cutoffs = major_data.get("cutoffs")
+    
+    if not cutoffs:
+        print(f"\n[i] {selected_major} does not have a competitive cutoff quota.")
+        print("    Minimum faculty passing requirements apply to declare this major!")
+        return
+        
+    valid_years = [year for year, gpa in cutoffs.items() if gpa is not None]
+    if not valid_years:
+        print(f"\n[i] No historical competitive cutoff benchmarks found for {selected_major}.")
+        return
+        
+    latest_year = max(valid_years)
+    target_cutoff = cutoffs[latest_year]
+    
+    print(f"\nTarget Major       : {selected_major}")
+    print(f"Historic Cutoff    : {target_cutoff:.1f}%")
+    print(f"Your Current Stats : {total_credits:.1f} credits at {gpa_average:.1f}%")
+    print("-" * 45)
+    
+    try:
+        rem_input = input("How many credits are you taking in your upcoming session? ").strip()
+        remaining_credits = float(rem_input)
+        if remaining_credits <= 0:
+            print("[!] Planned credits must be greater than 0.")
+            return
+    except ValueError:
+        print("[!] Invalid input. Please enter a numerical credit value (e.g., 12 or 15).")
+        return
+        
+    total_future_credits = total_credits + remaining_credits
+    required_points = (target_cutoff * total_future_credits) - (gpa_average * total_credits)
+    required_gpa = required_points / remaining_credits
+    
+    print("\n" + "-"*45)
+    if gpa_average >= target_cutoff:
+        print(f"🎉 Your current average is already above the historic cutoff of {target_cutoff}%!")
+        print(f"To keep it there, you need to maintain a sessional average of:")
+        print(f"👉 {max(50.0, required_gpa):.1f}% across your next {remaining_credits:.1f} credits.")
+    else:
+        print(f"🚀 To reach the competitive milestone threshold of {target_cutoff}%:")
+        if required_gpa > 100:
+            print(f"⚠️ Out of reach for this specific session (Requires a {required_gpa:.1f}%).")
+            print("\nAlternative Strategic Pathways:")
+            print("  1. Change of Specialization Route:")
+            print("     Declare a lower-cutoff major for Year 2, shadow the target program's")
+            print("     courses, and use your Year 2 sessional average to switch for Year 3.")
+            print("  2. Stay in First Year via Credit Cap:")
+            print("     Keep total attempted credits under 48 to stay in Year 1 standing.")
+            print("     This bypasses the June declaration deadline to give you another year")
+            print("     to establish a higher GPA base cushion.")
+        elif required_gpa < 50:
+            print(f"✅ Highly achievable! You only need a passing sessional average of:")
+            print(f"👉 50.0% across your next {remaining_credits:.1f} credits.")
+        else:
+            print(f"🎯 You need to hit a sessional average target of:")
+            print(f"👉 {required_gpa:.1f}% across your next {remaining_credits:.1f} credits.")
+    print("="*45)
+    
 def interactive_menu():
     while True:
         print("\n=================================")
@@ -208,10 +289,11 @@ def interactive_menu():
         print("1. Check my overall average & credits")
         print("2. Check requirements for a specific major")
         print("3. Compare all majors side-by-side")
-        print("4. Close the program")
+        print("4. Run 'What-If' Sessional Grade Targeter")
+        print("5. Close the program")
         print("---------------------------------")
         
-        choice = input("Pick an option (1, 2, 3, or 4): ").strip()
+        choice = input("Pick an option (1, 2, 3, 4, or 5): ").strip()
         
         if choice == "1":
             total_credits, gpa_average = calculate_stats(my_transcript)
@@ -269,10 +351,14 @@ def interactive_menu():
             input("\nPress Enter to go back to the main menu...")
 
         elif choice == "4":
+            run_target_calculator(my_transcript)
+            input("\nPress Enter to go back to the main menu...")
+
+        elif choice == "5":
             print("\nClosing the planner. Good luck with your UBC School Year!")
             break
         else:
-            print("\n[!] That wasn't an option. Please type 1, 2, 3, or 4.")
-
+            print("\n[!] That wasn't an option. Please type 1, 2, 3, 4, or 5.")
+            
 if __name__ == "__main__":
     interactive_menu()
