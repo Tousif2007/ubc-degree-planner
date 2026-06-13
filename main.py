@@ -200,6 +200,209 @@ def audit_major(major_name, transcript, mode='first'):
     
     print(f"\nOverall Progress: |{bar}| {percentage:.0f}%")
 
+def check_breadth_requirements(transcript):
+    """
+    Prints out Faculty Communication & Breadth requirements to the terminal.
+    Includes logic to prevent double-counting.
+    """
+    used_courses = set() # Tracker for no double-counting
+    
+    print("\n" + "="*50)
+    print("      FACULTY BREADTH & COMMUNICATION AUDIT      ")
+    print("="*50)
+    
+    # 1. Communication Evaluator
+    has_scie113 = "SCIE 113" in transcript
+    if has_scie113: used_courses.add("SCIE 113")
+    
+    additional_comm_subjects = ["ENGL", "WRDS", "ASTU"]
+    additional_comm_course = None
+    
+    for course in transcript.keys():
+        subject = course.split(" ")[0]
+        if subject in additional_comm_subjects and course != "SCIE 113":
+            additional_comm_course = course
+            used_courses.add(course) # Mark as used
+            break
+            
+    print("\n1. COMMUNICATION REQUIREMENT STATUS:")
+    print("-" * 40)
+    print(f"  SCIE 113          : {'[✓] Completed' if has_scie113 else '[ ] MISSING'}")
+    print(f"  Additional Comm.  : {f'[✓] Completed ({additional_comm_course})' if additional_comm_course else '[ ] MISSING'}")
+    print(f"  Overall Status    : {'✅ SATISFIED' if (has_scie113 and additional_comm_course) else '░ IN PROGRESS'}")
+
+    # 2. Arts Breadth Evaluator
+    arts_subjects = ["CRWR", "PHIL", "PSYC", "ECON", "SOCI", "HIST", "ANTH", "ASIA", "FREN", "SPAN"]
+    arts_credits = 0.0
+    arts_counted = []
+    
+    for course, data in transcript.items():
+        if course in used_courses: continue # SKIP if already used
+        
+        subject = course.split(" ")[0]
+        if subject in arts_subjects:
+            arts_credits += data[0]
+            arts_counted.append(f"{course} ({data[0]} cr)")
+            used_courses.add(course) # Mark as used
+            
+    print("\n2. ARTS BREADTH REQUIREMENT (Target: 12.0 Credits):")
+    print("-" * 40)
+    print(f"  Total Arts Credits: {arts_credits:.1f} / 12.0")
+    if arts_counted:
+        print(f"  Counted Courses   : {', '.join(arts_counted)}")
+    print(f"  Status            : {'✅ Requirement Met!' if arts_credits >= 12.0 else f'❌ Needs {12.0 - arts_credits:.1f} more credits'}")
+
+    # 3. Science Breadth Evaluator
+    categories = {
+        "1. Mathematics" : ["MATH"],
+        "2. Chemistry"   : ["CHEM"],
+        "3. Physics"     : ["PHYS"],
+        "4. Life Science": ["BIOL", "BIO", "MICB", "CAPS", "BIOC"],
+        "5. Statistics"  : ["STAT", "DSCI", "MATH 302", "BIOL 300"],
+        "6. Computer Sci": ["CPSC"],
+        "7. Earth & Plan": ["EOSC", "ATSC", "ASTR", "GEOB", "ENVR"]
+    }
+    categories_filled = {cat_name: [] for cat_name in categories.keys()}
+    
+    for course in transcript.keys():
+        if course in used_courses: continue # SKIP if already used
+        
+        subject = course.split(" ")[0]
+        for cat_name, prefixes in categories.items():
+            if subject in prefixes:
+                categories_filled[cat_name].append(course)
+                used_courses.add(course) # Mark as used
+                break
+                
+    print("\n3. SCIENCE BREADTH REQUIREMENT (Target: 6 of 7 Categories):")
+    print("-" * 40)
+    categories_hit_count = 0
+    for cat_name, courses in categories_filled.items():
+        if courses:
+            categories_hit_count += 1
+            print(f"  [✓] {cat_name:<16} : Met by {', '.join(courses)}")
+        else:
+            print(f"  [ ] {cat_name:<16} : Empty")
+    print(f"\n  Total Categories Cleared: {categories_hit_count} / 6 Required")
+    print(f"  Status                  : {'✅ SATISFIED' if categories_hit_count >= 6 else '❌ IN PROGRESS'}")
+    print("="*50)
+
+    
+def export_report(transcript):
+    print("\nGenerating your comprehensive degree report file...")
+    total_credits, gpa_average = calculate_stats(transcript)
+    
+    with open("degree_plan_report.txt", "w", encoding="utf-8") as f:
+        f.write("="*60 + "\n")
+        f.write("         UBC SCIENCE DEGREE PLAN COMPREHENSIVE REPORT      \n")
+        f.write("="*60 + "\n")
+        f.write(f"Current Cumulative Stats: {total_credits:.1f} credits completed at {gpa_average:.1f}%\n")
+        f.write("-" * 60 + "\n\n")
+        
+        # 1. FIRST YEAR SPECIALIZATION MAJORS PROGRESS
+        f.write("1. FIRST YEAR SPECIALIZATION MAJORS PROGRESS:\n")
+        f.write("-" * 60 + "\n")
+        for major_name, major_data in majors_database.items():
+            reqs_to_check = major_data["first_year_reqs"]
+            completed_reqs = []
+            missing_reqs = []
+            for req in reqs_to_check:
+                if check_requirement(req, transcript):
+                    completed_reqs.append(req)
+                else:
+                    missing_reqs.append(req)
+            
+            total = len(reqs_to_check)
+            met_reqs = len(completed_reqs)
+            percentage = (met_reqs / total) * 100 if total > 0 else 0
+            bar = '█' * int(10 * met_reqs // total) + '░' * (10 - int(10 * met_reqs // total))
+            
+            f.write(f"\n  {major_name:<15} : |{bar}| {percentage:.0f}% requirements met\n")
+            if completed_reqs:
+                completed_strs = ["/".join(str(item) for item in r) if isinstance(r, list) else str(r) for r in completed_reqs]
+                f.write(f"    ✔ Completed: {', '.join(completed_strs)}\n")
+            if missing_reqs:
+                missing_strs = ["/".join(str(item) for item in r) if isinstance(r, list) else str(r) for r in missing_reqs]
+                f.write(f"    ❌ Missing  : {', '.join(missing_strs)}\n")
+                
+        f.write("\n" + "="*60 + "\n\n")
+        
+        # 2. COMMUNICATION REQUIREMENT STATUS
+        # Use direct key lookup from the transcript dictionary
+        has_scie113 = "SCIE 113" in transcript
+        additional_comm_subjects = ["ENGL", "WRDS", "ASTU"]
+        additional_comm_course = None
+        
+        for course_code in transcript.keys():
+            subject = course_code.split(" ")[0]
+            if subject in additional_comm_subjects and course_code != "SCIE 113":
+                additional_comm_course = course_code
+                break
+                
+        f.write("2. COMMUNICATION REQUIREMENT STATUS:\n")
+        f.write("-" * 60 + "\n")
+        f.write(f"  Status: {'✅ SATISFIED' if has_scie113 and additional_comm_course else '░ IN PROGRESS'}\n")
+        f.write(f"    • SCIE 113  : {'✅ Completed' if has_scie113 else '❌ Missing'}\n")
+        f.write(f"    • Additional: {'✅ Completed (' + additional_comm_course + ')' if additional_comm_course else '❌ Missing'}\n")
+        
+        f.write("\n" + "="*60 + "\n\n")
+        
+        # 3. ARTS BREADTH REQUIREMENT
+        arts_credits = 0.0
+        arts_subjects = ["CRWR", "PHIL", "PSYC", "ECON", "SOCI", "HIST", "ANTH", "ASIA", "FREN", "SPAN"]
+        arts_counted_items = []
+        for course, data in transcript.items():
+            subject = course.split(" ")[0]
+            if subject in arts_subjects:
+                arts_credits += data[0]
+                arts_counted_items.append(f"{course} ({data[0]} cr)")
+        
+        arts_progress = min(arts_credits, 12.0)
+        arts_bar = '█' * int(arts_progress / 1.2) + '░' * (10 - int(arts_progress / 1.2))
+        f.write("3. ARTS BREADTH REQUIREMENT (Target: 12.0 Credits):\n")
+        f.write("-" * 60 + "\n")
+        f.write(f"  Progress: |{arts_bar}| {arts_credits:.1f}/12.0 credits\n")
+        if arts_counted_items: f.write(f"  Counted : {', '.join(arts_counted_items)}\n")
+        f.write(f"  Status  : {'✅ Requirement Met!' if arts_credits >= 12.0 else f'❌ Needs {12.0 - arts_credits:.1f} more credits'}\n")
+        
+        f.write("\n" + "="*60 + "\n\n")
+        
+        # 4. SCIENCE BREADTH REQUIREMENT
+        categories = {
+            "1. Mathematics" : ["MATH"],
+            "2. Chemistry"   : ["CHEM"],
+            "3. Physics"     : ["PHYS"],
+            "4. Life Science": ["BIOL", "BIO", "MICB", "CAPS", "BIOC"],
+            "5. Statistics"  : ["STAT", "DSCI", "MATH 302", "BIOL 300"],
+            "6. Computer Sci": ["CPSC"],
+            "7. Earth & Plan": ["EOSC", "ATSC", "ASTR", "GEOB", "ENVR"]
+        }
+        categories_filled = {cat_name: [] for cat_name in categories.keys()}
+        for course_code in transcript.keys():
+            subject = course_code.split(" ")[0]
+            if "PHYS 100" in course_code or "CHEM 100" in course_code or "CHEM 300" in course_code: continue
+            if "MATH 302" in course_code or "BIOL 300" in course_code:
+                categories_filled["5. Statistics"].append(course_code)
+                continue
+            for cat_name, prefixes in categories.items():
+                if subject in prefixes:
+                    categories_filled[cat_name].append(course_code)
+                    break
+        
+        categories_hit_count = sum(1 for c in categories_filled.values() if len(c) > 0)
+        f.write("4. SCIENCE BREADTH REQUIREMENT (Target: 6 of 7 Categories):\n")
+        f.write("-" * 60 + "\n")
+        for cat_name, courses in categories_filled.items():
+            if courses:
+                f.write(f"    ✅ {cat_name:<16} : Met by {', '.join(courses)}\n")
+            else:
+                f.write(f"    ░ {cat_name:<16} : Empty\n")
+        f.write(f"\n  Total Categories Cleared: {categories_hit_count} / 6 Required\n")
+        f.write(f"  Status: {'✅ SATISFIED' if categories_hit_count >= 6 else '❌ IN PROGRESS'}\n")
+        f.write("="*60 + "\n")
+
+    print("🎉 Success! 'degree_plan_report.txt' has been populated with accurate framework breadth data.")
+    
 def run_target_calculator(transcript):
     print("\n" + "="*45)
     print("         COMPETITIVE GRADE TARGETER          ")
@@ -290,10 +493,14 @@ def interactive_menu():
         print("2. Check requirements for a specific major")
         print("3. Compare all majors side-by-side")
         print("4. Run 'What-If' Sessional Grade Targeter")
-        print("5. Close the program")
+        print("5. Check Faculty Breadth & Comm Reqs")
+        print("6. Export my full report to a text file")
+        print("7. Close the program")
         print("---------------------------------")
         
-        choice = input("Pick an option (1, 2, 3, 4, or 5): ").strip()
+        choice = input("Pick an option (1-7): ").strip()
+        
+        
         
         if choice == "1":
             total_credits, gpa_average = calculate_stats(my_transcript)
@@ -355,10 +562,18 @@ def interactive_menu():
             input("\nPress Enter to go back to the main menu...")
 
         elif choice == "5":
+            check_breadth_requirements(my_transcript)
+            input("\nPress Enter to go back to the main menu...")
+
+        elif choice == "6":
+            export_report(my_transcript)
+            input("\nPress Enter to go back to the main menu...")
+
+        elif choice == "7":
             print("\nClosing the planner. Good luck with your UBC School Year!")
             break
         else:
             print("\n[!] That wasn't an option. Please type 1, 2, 3, 4, or 5.")
-            
+
 if __name__ == "__main__":
     interactive_menu()
