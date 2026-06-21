@@ -59,6 +59,7 @@ majors_database = {
             "Upper Year Core": ["CPSC 330", "CPSC 368", "DSCI 310", "DSCI 320", "DSCI 430", "STAT 301"]
         }
     },
+    
     "Biochemistry": {
         "cutoffs": {2025: 76.7, 2024: 65.9, 2023: 76.4, 2022: 71.0, 2021: 71.4},
         # You need these specific required courses to start the major
@@ -69,6 +70,39 @@ majors_database = {
             "Upper Year Core": ["BIOC 301", "BIOC 302", "BIOC 303", "BIOC 402", "BIOC 403", "BIOL 335"]
         }
     },
+
+    "Astronomy": {
+         "cutoffs": None,
+        "first_year_reqs": [
+            "SCIE 113",
+            ["CHEM 121", "CHEM 111"],
+            ["MATH 100", "MATH 102", "MATH 104", "MATH 110", "MATH 180", "MATH 184", "MATH 120"],
+            ["MATH 101", "MATH 103", "MATH 105", "MATH 121"],
+            ["PHYS 117", "PHYS 106", "PHYS 107"],
+            ["PHYS 118", "PHYS 108"],
+            ["PHYS 119", "PHYS 109"]
+        ],
+        "grad_requirements": {
+            "Second Year Core": [
+                "ASTR 200", "ASTR 205",
+                "MATH 200", "MATH 317",
+                ["MATH 221", "MATH 223"], "MATH 215",
+                "PHYS 200", "PHYS 219", "PHYS 229",
+                "PHYS 210"
+            ],
+            "Upper Year Core": [
+                "ASTR 300",
+                ["MATH 316", "PHYS 312"],
+                "PHYS 203",
+                "PHYS 301", "PHYS 216",
+                "PHYS 408",
+                ["ASTR 406", "ASTR 407"],
+                "ASTR 404", "ASTR 405",
+                "PHYS 304", "PHYS 403"
+            ]
+        }
+    },
+
     "Physics": {
         "cutoffs": None,
         "first_year_reqs": [
@@ -85,6 +119,7 @@ majors_database = {
             "Upper Year Core": ["MATH 317", "PHYS 203", ["PHYS 309", "PHYS 319"], ["PHYS 312", "MATH 316"], "PHYS 304"]
         }
     },
+
     "Mathematics": {
         "cutoffs": {2025: None, 2024: 67.0, 2023: 76.3, 2022: 69.1, 2021: 65.1},
         "first_year_reqs": [
